@@ -42,6 +42,7 @@ def _get_package_name_dict(shortfile, fullfile):
 
 def _populate_modulemd(module_ctx,
                        module_exclusive_packages,
+                       api_rpms,
                        include_module_bootstrap):
     mod_md = modulemd.ModuleMetadata()
     mod_md.name = str(module_ctx.module)
@@ -107,6 +108,9 @@ def _populate_modulemd(module_ctx,
         mod_md.components.add_rpm(name,
                                   "Automatically generated",
                                   ref=deps[name])
+
+    for rpm in api_rpms:
+        mod_md.api.add_rpm(rpm)
 
     return mod_md
 
@@ -195,11 +199,23 @@ def create_modulemd_worker(arch_queue):
             include_module_bootstrap = \
                 len(module_bootstrap_exclusive_packages) > 0
 
+            # Get the list of binary RPMs to include in the API
+            with open("%s/runtime-binary-packages-short.txt" % (
+                      br_base_path)) as f:
+                base_api_rpms = f.read().splitlines()
+            with open("%s/runtime-binary-packages-short.txt" % (
+                      module_base_path)) as f:
+                module_api_rpms = f.read().splitlines()
+
+            api_rpms = [ rpm for rpm
+                         in sorted(module_api_rpms)
+                         if rpm not in base_api_rpms]
+
             # Create the modulemd file for the module
 
             # Main section
             mod_md = _populate_modulemd(
-                module_ctx, module_exclusive_packages,
+                module_ctx, module_exclusive_packages, api_rpms,
                 include_module_bootstrap)
 
             mod_md.dump(modulemd_file)
@@ -223,6 +239,7 @@ def create_modulemd_worker(arch_queue):
                     bootstrap_modulemd_file=module_ctx.bootstrap_modulemd_file)
                 mod_bs_md = _populate_modulemd(mod_bs_ctx,
                                                module_bootstrap_exclusive_packages,
+                                               [],
                                                False)
                 mod_bs_md.dump(bootstrap_modulemd_file)
 
