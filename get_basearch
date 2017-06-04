@@ -1,0 +1,6 @@
+#!/usr/bin/python3
+
+import sys
+import dnf
+
+print(dnf.rpm.basearch(sys.argv[1]))
