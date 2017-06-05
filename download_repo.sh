@@ -154,15 +154,21 @@ function is_secondary_arch()
     return 1
 }
 
-alt_arch_base="rsync://mirrors.kernel.org/fedora-secondary/releases"
-primary_arch_base="rsync://mirrors.kernel.org/fedora/releases"
+alt_arch_base="rsync://mirrors.kernel.org/fedora-secondary"
+primary_arch_base="rsync://mirrors.kernel.org/fedora"
+
+alt_arch_frozen_base="${alt_arch_base}/releases"
+primary_arch_frozen_base="${primary_arch_base}/releases"
+
+alt_arch_updates_base="${alt_arch_base}/updates"
+primary_arch_updates_base="${primary_arch_base}/updates"
 
 version=$_arg_release
 milestone=$_arg_milestone
 
 if [ $_arg_release == "Rawhide" ]; then
-    alt_arch_base="rsync://mirrors.kernel.org/fedora-secondary/development/rawhide/Everything/"
-    primary_arch_base="rsync://mirrors.kernel.org/fedora/development/rawhide/Everything/"
+    alt_arch_frozen_base="rsync://mirrors.kernel.org/fedora-secondary/development/rawhide/Everything/"
+    primary_arch_frozen_base="rsync://mirrors.kernel.org/fedora/development/rawhide/Everything/"
 
     print_milestone="Rawhide"
     version_path="rawhide"
@@ -181,7 +187,7 @@ else
 fi
 
 # The Source RPMs always come from the primary path
-source_uri="${primary_arch_base}/${version_path}/Everything/source/tree/repodata/"
+source_uri="${primary_arch_frozen_base}/${version_path}/Everything/source/tree/repodata/"
 
 dest_sources="${_arg_repo_path}/repo/${version_path}/frozen/sources/repodata"
 mkdir -p $dest_sources
@@ -189,24 +195,41 @@ mkdir -p $dest_sources
 echo "Downloading source RPM repodata from $source_uri"
 rsync -azh --no-motd --delete-before $source_uri $dest_sources
 
+if [ $_arg_updates == "on" ]; then
+    # Pull down the stable updates repodata as well
+
+    # The Source RPMs always come from the primary path
+    source_uri="${primary_arch_updates_base}/${version_path}/Everything/source/tree/repodata/"
+
+    dest_sources="${_arg_repo_path}/repo/${version_path}/frozen/sources/repodata"
+    mkdir -p $dest_sources
+    # rsync the source RPM repodata from mirrors.kernel.org
+    echo "Downloading source RPM repodata from $source_uri"
+    rsync -azh --no-motd --delete-before $source_uri $dest_sources
+fi
+
 for arch in ${_arg_arch[@]}; do
     basearch=$(./get_basearch $arch)
 
     # The primary and alternative architectures are stored separately
     is_secondary_arch $basearch $version
     sec_arch=$?
+
+    repodata_path="${version_path}/Everything/$basearch/os/repodata/"
     if [ $sec_arch -eq 1 ]; then
-        binary_uri="${alt_arch_base}/${version_path}/Everything/$basearch/os/repodata/"
+        frozen_binary_uri="${alt_arch_frozen_base}/${version_path}/Everything/$basearch/os/repodata/"
+        updates_binary_uri="${alt_arch_updates_base}/${version_path}/Everything/$basearch/os/repodata/"
     else
-        binary_uri="${primary_arch_base}/${version_path}/Everything/$basearch/os/repodata/"
+        frozen_binary_uri="${primary_arch_frozen_base}/${version_path}/Everything/$basearch/os/repodata/"
+        updates_binary_uri="${primary_arch_updates_base}/${version_path}/Everything/$basearch/os/repodata/"
     fi
 
-    dest_binaries="repo/${version_path}/frozen/$basearch/repodata"
-    mkdir -p $dest_binaries
+    dest_frozen_binaries="repo/${version_path}/frozen/$basearch/repodata"
+    mkdir -p $dest_frozen_binaries
 
     # rsync the binary RPM repodata from mirrors.kernel.org
     echo "Downloading binary RPM repodata from $binary_uri"
-    rsync -azh --no-motd --delete-before $binary_uri $dest_binaries
+    rsync -azh --no-motd --delete-before $frozen_binary_uri $dest_frozen_binaries
 
     # Pull down the current override repository repodata from
     # fedorapeople
