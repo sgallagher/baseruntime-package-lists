@@ -5,6 +5,7 @@
 # which will update the generated code.
 # ARG_OPTIONAL_SINGLE([release],[],[Which Fedora release?],[26])
 # ARG_OPTIONAL_SINGLE([milestone],[],[Which release milestone? Alpha, Beta or GA],[GA])
+# ARG_OPTIONAL_SINGLE([repo-path],[],[Base directory for storing the repodata],[.])
 # ARG_OPTIONAL_REPEATED([arch],[],[Which CPU architecture(s)?],[])
 # ARG_OPTIONAL_BOOLEAN([updates],[],[Whether to also download the latest updates repodata])
 # ARG_OPTIONAL_BOOLEAN([clobber],[],[Whether to remove the existing repodata and download it fresh],[on])
@@ -37,6 +38,7 @@ begins_with_short_option()
 # THE DEFAULTS INITIALIZATION - OPTIONALS
 _arg_release="26"
 _arg_milestone="GA"
+_arg_repo_path="."
 _arg_arch=()
 _arg_updates=off
 _arg_clobber=on
@@ -44,9 +46,10 @@ _arg_clobber=on
 print_help ()
 {
 	echo "Download the RPM repodata for the requested Fedora version and milestone"
-	printf 'Usage: %s [--release <arg>] [--milestone <arg>] [--arch <arg>] [--(no-)updates] [--(no-)clobber] [-h|--help]\n' "$0"
+	printf 'Usage: %s [--release <arg>] [--milestone <arg>] [--repo-path <arg>] [--arch <arg>] [--(no-)updates] [--(no-)clobber] [-h|--help]\n' "$0"
 	printf "\t%s\n" "--release: Which Fedora release? (default: '"26"')"
 	printf "\t%s\n" "--milestone: Which release milestone? Alpha, Beta or GA (default: '"GA"')"
+	printf "\t%s\n" "--repo-path: Base directory for storing the repodata (default: '"."')"
 	printf "\t%s\n" "--arch: Which CPU architecture(s)? (empty by default)"
 	printf "\t%s\n" "--updates,--no-updates: Whether to also download the latest updates repodata (off by default)"
 	printf "\t%s\n" "--clobber,--no-clobber: Whether to remove the existing repodata and download it fresh (on by default)"
@@ -77,6 +80,16 @@ do
 				shift
 			fi
 			_arg_milestone="$_val"
+			;;
+		--repo-path|--repo-path=*)
+			_val="${_key##--repo-path=}"
+			if test "$_val" = "$_key"
+			then
+				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+				_val="$2"
+				shift
+			fi
+			_arg_repo_path="$_val"
 			;;
 		--arch|--arch=*)
 			_val="${_key##--arch=}"
@@ -170,7 +183,7 @@ fi
 # The Source RPMs always come from the primary path
 source_uri="${primary_arch_base}/${version_path}/Everything/source/tree/repodata/"
 
-dest_sources="repo/${version_path}/frozen/sources/repodata"
+dest_sources="${_arg_repo_path}/repo/${version_path}/frozen/sources/repodata"
 mkdir -p $dest_sources
 # rsync the source RPM repodata from mirrors.kernel.org
 echo "Downloading source RPM repodata from $source_uri"
@@ -204,7 +217,7 @@ for arch in ${_arg_arch[@]}; do
     override_source_uri="${override_base}/sources/repodata/"
     override_binary_uri="${override_base}/os/repodata/"
 
-    dest_override=repo/${version_path}/override/$basearch
+    dest_override=${_arg_repo_path}/repo/${version_path}/override/$basearch
     dest_override_sources=${dest_override}/sources/repodata
     dest_override_binaries=${dest_override}/os/repodata
     mkdir -p $dest_override_sources $dest_override_binaries
