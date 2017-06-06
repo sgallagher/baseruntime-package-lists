@@ -232,7 +232,6 @@ for arch in ${_arg_arch[@]}; do
     is_secondary_arch $basearch $version
     sec_arch=$?
 
-    repodata_path="${version_path}/Everything/$basearch/os/repodata/"
     if [ $sec_arch -eq 1 ]; then
         frozen_binary_uri="${alt_arch_frozen_base}/${version_path}/Everything/$basearch/os/repodata/"
         updates_binary_uri="${alt_arch_updates_base}/${version_path}/Everything/$basearch/os/repodata/"
