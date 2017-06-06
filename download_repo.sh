@@ -136,18 +136,18 @@ popd () {
 
 function is_secondary_arch()
 {
-    arch=$1
-    version=$2
+    _arch=$1
+    _version=$2
 
-    if [ $arch == "x86_64" ]; then
+    if [ $_arch == "x86_64" ]; then
         return 0
     fi
 
-    if [ $arch == "armhfp" -a $version -ge 20 ]; then
+    if [ $_arch == "armhfp" -a $_version -ge 20 ]; then
         return 0
     fi
 
-    if [ $arch == "i386" -a $version -le 25 ]; then
+    if [ $_arch == "i386" -a $_version -le 25 ]; then
         return 0
     fi
 
