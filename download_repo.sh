@@ -166,6 +166,9 @@ primary_arch_updates_base="${primary_arch_base}/updates"
 version=$_arg_release
 milestone=$_arg_milestone
 
+mkdir -p ${_arg_repo_path}
+
+
 repo_config_file="${_arg_repo_path}/Fedora-${version}-${milestone}-repos.cfg"
 echo > $repo_config_file
 
@@ -192,7 +195,7 @@ fi
 # The Source RPMs always come from the primary path
 source_uri="${primary_arch_frozen_base}/${version_path}/Everything/source/tree/repodata/"
 
-dest_sources=$(readlink -f "${_arg_repo_path}/${version_path}/frozen/sources/repodata")
+dest_sources="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/sources/repodata"
 mkdir -p $dest_sources
 # rsync the source RPM repodata from mirrors.kernel.org
 echo "Downloading source RPM repodata from ${source_uri}"
@@ -209,7 +212,7 @@ if [ $_arg_updates == "on" ]; then
     # The Source RPMs always come from the primary path
     source_uri="${primary_arch_updates_base}/${version_path}/Everything/source/tree/repodata/"
 
-    dest_update_sources=$(readlink -f "${_arg_repo_path}/${version_path}/frozen/sources/repodata")
+    dest_update_sources="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/sources/repodata"
     mkdir -p $dest_update_sources
     # rsync the source RPM repodata from mirrors.kernel.org
     echo "Downloading source RPM repodata from ${source_uri}"
@@ -237,7 +240,7 @@ for arch in ${_arg_arch[@]}; do
         updates_binary_uri="${primary_arch_updates_base}/${version_path}/Everything/$basearch/os/repodata/"
     fi
 
-    dest_frozen_binaries=$(readlink -f "repo/${version_path}/frozen/$basearch/repodata")
+    dest_frozen_binaries="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/$basearch/repodata"
     mkdir -p $dest_frozen_binaries
 
     # rsync the binary RPM repodata from mirrors.kernel.org
@@ -253,7 +256,7 @@ for arch in ${_arg_arch[@]}; do
     override_source_uri="${override_base}/sources/repodata/"
     override_binary_uri="${override_base}/os/repodata/"
 
-    dest_override=$(readlink -f ${_arg_repo_path}/${version_path}/override/$basearch)
+    dest_override="$(readlink -f ${_arg_repo_path})/${version_path}/override/$basearch"
     dest_override_sources=${dest_override}/sources/repodata
     dest_override_binaries=${dest_override}/os/repodata
     mkdir -p $dest_override_sources $dest_override_binaries
