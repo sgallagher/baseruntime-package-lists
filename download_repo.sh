@@ -198,8 +198,9 @@ mkdir -p $dest_sources
 echo "Downloading source RPM repodata from ${source_uri}"
 rsync -azh --no-motd --delete-before $source_uri $dest_sources
 
+source_path=$(dirname $dest_sources)
 echo "[base-source]" >> $repo_config_file
-echo "path = $dest_sources" >> $repo_config_file
+echo "path = $source_path" >> $repo_config_file
 echo >> $repo_config_file
 
 if [ $_arg_updates == "on" ]; then
@@ -214,8 +215,9 @@ if [ $_arg_updates == "on" ]; then
     echo "Downloading source RPM repodata from ${source_uri}"
     rsync -azh --no-motd --delete-before $source_uri $dest_update_sources
 
+    source_updates_path=$(dirname $dest_update_sources)
     echo "[updates-source]" >> $repo_config_file
-    echo "path = $dest_update_sources" >> $repo_config_file
+    echo "path = $source_updates_path" >> $repo_config_file
     echo >> $repo_config_file
 fi
 
@@ -265,17 +267,17 @@ for arch in ${_arg_arch[@]}; do
         ${override_binary_uri} ${dest_override_binaries}
 done
 
-    frozen_binary_path="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/{arch}/repodata"
+    frozen_binary_path="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/{arch}"
     echo "[base]" >> $repo_config_file
     echo "path = $frozen_binary_path" >> $repo_config_file
     echo >> $repo_config_file
 
-    override_source_path="$(readlink -f ${_arg_repo_path})/${version_path}/override/{arch}/sources/repodata"
+    override_source_path="$(readlink -f ${_arg_repo_path})/${version_path}/override/{arch}/sources"
     echo "[override-source]" >> $repo_config_file
     echo "path = $override_source_path" >> $repo_config_file
     echo >> $repo_config_file
 
-    override_binary_path="$(readlink -f ${_arg_repo_path})/${version_path}/override/{arch}/os/repodata"
+    override_binary_path="$(readlink -f ${_arg_repo_path})/${version_path}/override/{arch}/os"
     echo "[override]" >> $repo_config_file
     echo "path = $override_binary_path" >> $repo_config_file
     echo >> $repo_config_file
