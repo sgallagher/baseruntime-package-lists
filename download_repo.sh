@@ -244,7 +244,7 @@ for arch in ${_arg_arch[@]}; do
     mkdir -p $dest_frozen_binaries
 
     # rsync the binary RPM repodata from mirrors.kernel.org
-    echo "Downloading binary RPM repodata from ${frozen_binary_uri}"
+    echo "Downloading binary RPM repodata from ${frozen_binary_uri} for $arch"
     rsync -azh --no-motd --delete-before $frozen_binary_uri $dest_frozen_binaries
 
     # Pull down the current override repository repodata from
@@ -261,11 +261,11 @@ for arch in ${_arg_arch[@]}; do
     dest_override_binaries=${dest_override}/os/repodata
     mkdir -p $dest_override_sources $dest_override_binaries
 
-    echo "Downloading override source RPM repodata from ${override_source_uri}"
+    echo "Downloading override source RPM repodata from ${override_source_uri} for $arch"
     rsync -azh --no-motd --delete-before \
         ${override_source_uri} ${dest_override_sources}
 
-    echo "Downloading override binary RPM repodata from ${override_binary_uri}"
+    echo "Downloading override binary RPM repodata from ${override_binary_uri} for $arch"
     rsync -azh --no-motd --delete-before \
         ${override_binary_uri} ${dest_override_binaries}
 done
