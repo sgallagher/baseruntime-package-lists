@@ -166,6 +166,9 @@ primary_arch_updates_base="${primary_arch_base}/updates"
 version=$_arg_release
 milestone=$_arg_milestone
 
+repo_config_file="${_arg_repo_path}/Fedora-${version}-${milestone}-repos.cfg"
+echo > $repo_config_file
+
 if [ $_arg_release == "Rawhide" ]; then
     alt_arch_frozen_base="rsync://mirrors.kernel.org/fedora-secondary/development/rawhide/Everything/"
     primary_arch_frozen_base="rsync://mirrors.kernel.org/fedora/development/rawhide/Everything/"
@@ -192,8 +195,12 @@ source_uri="${primary_arch_frozen_base}/${version_path}/Everything/source/tree/r
 dest_sources=$(readlink -f "${_arg_repo_path}/${version_path}/frozen/sources/repodata")
 mkdir -p $dest_sources
 # rsync the source RPM repodata from mirrors.kernel.org
-echo "Downloading source RPM repodata from $source_uri"
+echo "Downloading source RPM repodata from ${source_uri}"
 rsync -azh --no-motd --delete-before $source_uri $dest_sources
+
+echo "[base-source]" >> $repo_config_file
+echo "path = $dest_sources" >> $repo_config_file
+echo >> $repo_config_file
 
 if [ $_arg_updates == "on" ]; then
     # Pull down the stable updates repodata as well
@@ -204,8 +211,12 @@ if [ $_arg_updates == "on" ]; then
     dest_update_sources=$(readlink -f "${_arg_repo_path}/${version_path}/frozen/sources/repodata")
     mkdir -p $dest_update_sources
     # rsync the source RPM repodata from mirrors.kernel.org
-    echo "Downloading source RPM repodata from $source_uri"
-    rsync -azh --no-motd --delete-before $source_uri $dest_sources
+    echo "Downloading source RPM repodata from ${source_uri}"
+    rsync -azh --no-motd --delete-before $source_uri $dest_update_sources
+
+    echo "[updates-source]" >> $repo_config_file
+    echo "path = $dest_update_sources" >> $repo_config_file
+    echo >> $repo_config_file
 fi
 
 for arch in ${_arg_arch[@]}; do
@@ -228,8 +239,12 @@ for arch in ${_arg_arch[@]}; do
     mkdir -p $dest_frozen_binaries
 
     # rsync the binary RPM repodata from mirrors.kernel.org
-    echo "Downloading binary RPM repodata from $binary_uri"
+    echo "Downloading binary RPM repodata from ${frozen_binary_uri}"
     rsync -azh --no-motd --delete-before $frozen_binary_uri $dest_frozen_binaries
+
+    echo "[base]" >> $repo_config_file
+    echo "path = $dest_frozen_binaries" >> $repo_config_file
+    echo >> $repo_config_file
 
     # Pull down the current override repository repodata from
     # fedorapeople
@@ -245,13 +260,21 @@ for arch in ${_arg_arch[@]}; do
     dest_override_binaries=${dest_override}/os/repodata
     mkdir -p $dest_override_sources $dest_override_binaries
 
-    echo "Downloading override source RPM repodata from $override_source_uri"
+    echo "Downloading override source RPM repodata from ${override_source_uri}"
     rsync -azh --no-motd --delete-before \
         ${override_source_uri} ${dest_override_sources}
 
-    echo "Downloading override binary RPM repodata from $override_binary_uri"
+    echo "[override-source]" >> $repo_config_file
+    echo "path = $dest_override_sources" >> $repo_config_file
+    echo >> $repo_config_file
+
+    echo "Downloading override binary RPM repodata from ${override_binary_uri}"
     rsync -azh --no-motd --delete-before \
         ${override_binary_uri} ${dest_override_binaries}
+
+    echo "[override]" >> $repo_config_file
+    echo "path = $dest_override_binaries" >> $repo_config_file
+    echo >> $repo_config_file
 done
 
 # ] <-- needed because of Argbash
