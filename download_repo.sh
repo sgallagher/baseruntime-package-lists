@@ -240,7 +240,7 @@ for arch in ${_arg_arch[@]}; do
         updates_binary_uri="${primary_arch_updates_base}/${version_path}/Everything/$basearch/os/repodata/"
     fi
 
-    dest_frozen_binaries="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/$basearch/repodata"
+    dest_frozen_binaries="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/$arch/repodata"
     mkdir -p $dest_frozen_binaries
 
     # rsync the binary RPM repodata from mirrors.kernel.org
@@ -252,11 +252,11 @@ for arch in ${_arg_arch[@]}; do
     # This does not pull down the full contents, so if recreation
     # or modification of the repository is necessary, it must be
     # retrieved separately
-    override_base="rsync://fedorapeople.org/project/modularity/repos/fedora/gencore-override/${version_path}/$basearch"
+    override_base="rsync://fedorapeople.org/project/modularity/repos/fedora/gencore-override/${version_path}/$arch"
     override_source_uri="${override_base}/sources/repodata/"
     override_binary_uri="${override_base}/os/repodata/"
 
-    dest_override="$(readlink -f ${_arg_repo_path})/${version_path}/override/$basearch"
+    dest_override="$(readlink -f ${_arg_repo_path})/${version_path}/override/$arch"
     dest_override_sources=${dest_override}/sources/repodata
     dest_override_binaries=${dest_override}/os/repodata
     mkdir -p $dest_override_sources $dest_override_binaries

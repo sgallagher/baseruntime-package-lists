@@ -172,7 +172,7 @@ for arch in ${_arg_arch[@]}; do
     # Depchase the binary and source packages for the runtime
     echo "Processing runtime for $arch"
     cat $pkgfile |
-    xargs depchase -a $basearch -c $repocfg resolve $hints |
+    xargs depchase -a $arch -c $repocfg resolve $hints |
     while IFS= read -r nevra; do
           [[ "$nevra" == *.src || "$nevra" == *.nosrc ]] && type_="source" || type_="binary"
           name=${nevra%-*-*}
@@ -183,7 +183,7 @@ for arch in ${_arg_arch[@]}; do
     # Depchase the binary and source packages for the self-hosting set
     echo "Processing self-hosting for $arch"
     cat $pkgfile |
-    xargs depchase -a $basearch -c $repocfg resolve --selfhost $hints |
+    xargs depchase -a $arch -c $repocfg resolve --selfhost $hints |
     while IFS= read -r nevra; do
           [[ "$nevra" == *.src || "$nevra" == *.nosrc ]] && type_="source" || type_="binary"
           name=${nevra%-*-*}
