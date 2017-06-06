@@ -242,10 +242,6 @@ for arch in ${_arg_arch[@]}; do
     echo "Downloading binary RPM repodata from ${frozen_binary_uri}"
     rsync -azh --no-motd --delete-before $frozen_binary_uri $dest_frozen_binaries
 
-    echo "[base]" >> $repo_config_file
-    echo "path = $dest_frozen_binaries" >> $repo_config_file
-    echo >> $repo_config_file
-
     # Pull down the current override repository repodata from
     # fedorapeople
     # This does not pull down the full contents, so if recreation
@@ -264,17 +260,24 @@ for arch in ${_arg_arch[@]}; do
     rsync -azh --no-motd --delete-before \
         ${override_source_uri} ${dest_override_sources}
 
-    echo "[override-source]" >> $repo_config_file
-    echo "path = $dest_override_sources" >> $repo_config_file
-    echo >> $repo_config_file
-
     echo "Downloading override binary RPM repodata from ${override_binary_uri}"
     rsync -azh --no-motd --delete-before \
         ${override_binary_uri} ${dest_override_binaries}
-
-    echo "[override]" >> $repo_config_file
-    echo "path = $dest_override_binaries" >> $repo_config_file
-    echo >> $repo_config_file
 done
+
+    frozen_binary_path="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/{arch}/repodata"
+    echo "[base]" >> $repo_config_file
+    echo "path = $frozen_binary_path" >> $repo_config_file
+    echo >> $repo_config_file
+
+    override_source_path="$(readlink -f ${_arg_repo_path})/${version_path}/override/{arch}/sources/repodata"
+    echo "[override-source]" >> $repo_config_file
+    echo "path = $override_source_path" >> $repo_config_file
+    echo >> $repo_config_file
+
+    override_binary_path="$(readlink -f ${_arg_repo_path})/${version_path}/override/{arch}/os/repodata"
+    echo "[override]" >> $repo_config_file
+    echo "path = $override_binary_path" >> $repo_config_file
+    echo >> $repo_config_file
 
 # ] <-- needed because of Argbash
