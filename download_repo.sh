@@ -9,6 +9,7 @@
 # ARG_OPTIONAL_SINGLE([repo-path],[],[Base directory for storing the repodata],[./repo])
 # ARG_OPTIONAL_REPEATED([arch],[],[Which CPU architecture(s)?],[])
 # ARG_OPTIONAL_BOOLEAN([updates],[],[Whether to also download the latest updates repodata. Not valid with release=Rawhide or --alt-stage])
+# ARG_OPTIONAL_BOOLEAN([overrides],[],[Whether to also download the override repodata.],[])
 # ARG_HELP([Download the RPM repodata for the requested Fedora version and milestone])
 # ARGBASH_GO()
 # needed because of Argbash --> m4_ignore([
@@ -42,17 +43,19 @@ _arg_alt_stage=
 _arg_repo_path="./repo"
 _arg_arch=()
 _arg_updates=off
+_arg_overrides=off
 
 print_help ()
 {
 	echo "Download the RPM repodata for the requested Fedora version and milestone"
-	printf 'Usage: %s [--release <arg>] [--milestone <arg>] [--alt-stage <arg>] [--repo-path <arg>] [--arch <arg>] [--(no-)updates] [-h|--help]\n' "$0"
+	printf 'Usage: %s [--release <arg>] [--milestone <arg>] [--alt-stage <arg>] [--repo-path <arg>] [--arch <arg>] [--(no-)updates] [--(no-)overrides] [-h|--help]\n' "$0"
 	printf "\t%s\n" "--release: Which Fedora release? (default: '"26"')"
 	printf "\t%s\n" "--milestone: Which release milestone? Alpha, Beta or GA (default: '"GA"')"
 	printf "\t%s\n" "--alt-stage: Specify the version of a release-candidate (no default)"
 	printf "\t%s\n" "--repo-path: Base directory for storing the repodata (default: '"./repo"')"
 	printf "\t%s\n" "--arch: Which CPU architecture(s)? (empty by default)"
 	printf "\t%s\n" "--updates,--no-updates: Whether to also download the latest updates repodata. Not valid with release=Rawhide or --alt-stage (off by default)"
+	printf "\t%s\n" "--overrides,--no-overrides: Whether to also download the override repodata. (off by default)"
 	printf "\t%s\n" "-h,--help: Prints help"
 }
 
@@ -114,6 +117,10 @@ do
 		--no-updates|--updates)
 			_arg_updates="on"
 			test "${1:0:5}" = "--no-" && _arg_updates="off"
+			;;
+		--no-overrides|--overrides)
+			_arg_overrides="on"
+			test "${1:0:5}" = "--no-" && _arg_overrides="off"
 			;;
 		-h*|--help)
 			print_help
@@ -209,7 +216,13 @@ dest_sources="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/sources/re
 mkdir -p $dest_sources
 # rsync the source RPM repodata from mirrors.kernel.org
 echo "Downloading source RPM repodata from ${source_uri}"
-rsync -azh --no-motd --delete-before $source_uri $dest_sources
+
+RC=5
+while [[ $RC -eq 5 ]]
+do
+   rsync -azhq --no-motd --delete-before $source_uri $dest_sources
+   RC=$?
+done
 
 source_path=$(dirname $dest_sources)
 echo "[base-source]" >> $repo_config_file
@@ -226,7 +239,12 @@ if [ $_arg_updates == "on" ]; then
     mkdir -p $dest_update_sources
     # rsync the source RPM repodata from mirrors.kernel.org
     echo "Downloading source RPM repodata from ${source_uri}"
-    rsync -azh --no-motd --delete-before $source_uri $dest_update_sources
+    RC=5
+    while [[ $RC -eq 5 ]]
+    do
+       rsync -azhq --no-motd --delete-before $source_uri $dest_update_sources
+       RC=$?
+    done
 
     source_updates_path=$(dirname $dest_update_sources)
     echo "[updates-source]" >> $repo_config_file
@@ -254,29 +272,47 @@ for arch in ${_arg_arch[@]}; do
 
     # rsync the binary RPM repodata from mirrors.kernel.org
     echo "Downloading binary RPM repodata from ${frozen_binary_uri} for $arch"
-    rsync -azh --no-motd --delete-before $frozen_binary_uri $dest_frozen_binaries
 
-    # Pull down the current override repository repodata from
-    # fedorapeople
-    # This does not pull down the full contents, so if recreation
-    # or modification of the repository is necessary, it must be
-    # retrieved separately
-    override_base="rsync://fedorapeople.org/project/modularity/repos/fedora/gencore-override/${version_path}/$arch"
-    override_source_uri="${override_base}/sources/repodata/"
-    override_binary_uri="${override_base}/os/repodata/"
+    RC=5
+    while [[ $RC -eq 5 ]]
+    do
+       rsync -azhq --no-motd --delete-before $frozen_binary_uri $dest_frozen_binaries
+       RC=$?
+    done
 
-    dest_override="$(readlink -f ${_arg_repo_path})/${version_path}/override/$arch"
-    dest_override_sources=${dest_override}/sources/repodata
-    dest_override_binaries=${dest_override}/os/repodata
-    mkdir -p $dest_override_sources $dest_override_binaries
+    if [ $_arg_overrides == "on" ]; then
+        # Pull down the current override repository repodata from
+        # fedorapeople
+        # This does not pull down the full contents, so if recreation
+        # or modification of the repository is necessary, it must be
+        # retrieved separately
+        override_base="rsync://fedorapeople.org/project/modularity/repos/fedora/gencore-override/${version_path}/$arch"
+        override_source_uri="${override_base}/sources/repodata/"
+        override_binary_uri="${override_base}/os/repodata/"
 
-    echo "Downloading override source RPM repodata from ${override_source_uri} for $arch"
-    rsync -azh --no-motd --delete-before \
-        ${override_source_uri} ${dest_override_sources}
+        dest_override="$(readlink -f ${_arg_repo_path})/${version_path}/override/$arch"
+        dest_override_sources=${dest_override}/sources/repodata
+        dest_override_binaries=${dest_override}/os/repodata
+        mkdir -p $dest_override_sources $dest_override_binaries
 
-    echo "Downloading override binary RPM repodata from ${override_binary_uri} for $arch"
-    rsync -azh --no-motd --delete-before \
-        ${override_binary_uri} ${dest_override_binaries}
+        echo "Downloading override source RPM repodata from ${override_source_uri} for $arch"
+        RC=5
+        while [[ $RC -eq 5 ]]
+        do
+           rsync -azh --no-motd --delete-before \
+            ${override_source_uri} ${dest_override_sources}
+           RC=$?
+        done
+
+        echo "Downloading override binary RPM repodata from ${override_binary_uri} for $arch"
+        RC=5
+        while [[ $RC -eq 5 ]]
+        do
+           rsync -azh --no-motd --delete-before \
+            ${override_binary_uri} ${dest_override_binaries}
+           RC=$?
+        done
+    fi
 done
 
     frozen_binary_path="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/{arch}"
@@ -284,14 +320,16 @@ done
     echo "path = $frozen_binary_path" >> $repo_config_file
     echo >> $repo_config_file
 
-    override_source_path="$(readlink -f ${_arg_repo_path})/${version_path}/override/{arch}/sources"
-    echo "[override-source]" >> $repo_config_file
-    echo "path = $override_source_path" >> $repo_config_file
-    echo >> $repo_config_file
+    if [ $_arg_overrides == "on" ]; then
+        override_source_path="$(readlink -f ${_arg_repo_path})/${version_path}/override/{arch}/sources"
+        echo "[override-source]" >> $repo_config_file
+        echo "path = $override_source_path" >> $repo_config_file
+        echo >> $repo_config_file
 
-    override_binary_path="$(readlink -f ${_arg_repo_path})/${version_path}/override/{arch}/os"
-    echo "[override]" >> $repo_config_file
-    echo "path = $override_binary_path" >> $repo_config_file
-    echo >> $repo_config_file
+        override_binary_path="$(readlink -f ${_arg_repo_path})/${version_path}/override/{arch}/os"
+        echo "[override]" >> $repo_config_file
+        echo "path = $override_binary_path" >> $repo_config_file
+        echo >> $repo_config_file
+    fi
 
 # ] <-- needed because of Argbash
