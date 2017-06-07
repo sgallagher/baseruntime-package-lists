@@ -5,9 +5,10 @@
 # which will update the generated code.
 # ARG_OPTIONAL_SINGLE([release],[],[Which Fedora release?],[26])
 # ARG_OPTIONAL_SINGLE([milestone],[],[Which release milestone? Alpha, Beta or GA],[GA])
+# ARG_OPTIONAL_SINGLE([alt-stage],[],[Specify the version of a release-candidate],[])
 # ARG_OPTIONAL_SINGLE([repo-path],[],[Base directory for storing the repodata],[./repo])
 # ARG_OPTIONAL_REPEATED([arch],[],[Which CPU architecture(s)?],[])
-# ARG_OPTIONAL_BOOLEAN([updates],[],[Whether to also download the latest updates repodata])
+# ARG_OPTIONAL_BOOLEAN([updates],[],[Whether to also download the latest updates repodata. Not valid with release=Rawhide or --alt-stage])
 # ARG_OPTIONAL_BOOLEAN([clobber],[],[Whether to remove the existing repodata and download it fresh],[on])
 # ARG_HELP([Download the RPM repodata for the requested Fedora version and milestone])
 # ARGBASH_GO()
@@ -38,6 +39,7 @@ begins_with_short_option()
 # THE DEFAULTS INITIALIZATION - OPTIONALS
 _arg_release="26"
 _arg_milestone="GA"
+_arg_alt_stage=
 _arg_repo_path="./repo"
 _arg_arch=()
 _arg_updates=off
@@ -46,12 +48,13 @@ _arg_clobber=on
 print_help ()
 {
 	echo "Download the RPM repodata for the requested Fedora version and milestone"
-	printf 'Usage: %s [--release <arg>] [--milestone <arg>] [--repo-path <arg>] [--arch <arg>] [--(no-)updates] [--(no-)clobber] [-h|--help]\n' "$0"
+	printf 'Usage: %s [--release <arg>] [--milestone <arg>] [--alt-stage <arg>] [--repo-path <arg>] [--arch <arg>] [--(no-)updates] [--(no-)clobber] [-h|--help]\n' "$0"
 	printf "\t%s\n" "--release: Which Fedora release? (default: '"26"')"
 	printf "\t%s\n" "--milestone: Which release milestone? Alpha, Beta or GA (default: '"GA"')"
+	printf "\t%s\n" "--alt-stage: Specify the version of a release-candidate (no default)"
 	printf "\t%s\n" "--repo-path: Base directory for storing the repodata (default: '"./repo"')"
 	printf "\t%s\n" "--arch: Which CPU architecture(s)? (empty by default)"
-	printf "\t%s\n" "--updates,--no-updates: Whether to also download the latest updates repodata (off by default)"
+	printf "\t%s\n" "--updates,--no-updates: Whether to also download the latest updates repodata. Not valid with release=Rawhide or --alt-stage (off by default)"
 	printf "\t%s\n" "--clobber,--no-clobber: Whether to remove the existing repodata and download it fresh (on by default)"
 	printf "\t%s\n" "-h,--help: Prints help"
 }
@@ -80,6 +83,16 @@ do
 				shift
 			fi
 			_arg_milestone="$_val"
+			;;
+		--alt-stage|--alt-stage=*)
+			_val="${_key##--alt-stage=}"
+			if test "$_val" = "$_key"
+			then
+				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+				_val="$2"
+				shift
+			fi
+			_arg_alt_stage="$_val"
 			;;
 		--repo-path|--repo-path=*)
 			_val="${_key##--repo-path=}"
@@ -158,12 +171,6 @@ function is_secondary_arch()
 alt_arch_base="rsync://mirrors.kernel.org/fedora-secondary"
 primary_arch_base="rsync://mirrors.kernel.org/fedora"
 
-alt_arch_frozen_base="${alt_arch_base}/releases"
-primary_arch_frozen_base="${primary_arch_base}/releases"
-
-alt_arch_updates_base="${alt_arch_base}/updates"
-primary_arch_updates_base="${primary_arch_base}/updates"
-
 version=$_arg_release
 milestone=$_arg_milestone
 
@@ -174,27 +181,36 @@ repo_config_file="${_arg_repo_path}/Fedora-${version}-${milestone}-repos.cfg"
 echo > $repo_config_file
 
 if [ $_arg_release == "Rawhide" ]; then
-    alt_arch_frozen_base="rsync://mirrors.kernel.org/fedora-secondary/development/rawhide/Everything/"
-    primary_arch_frozen_base="rsync://mirrors.kernel.org/fedora/development/rawhide/Everything/"
-
-    print_milestone="Rawhide"
-    version_path="rawhide"
+    alt_arch_frozen_base="rsync://mirrors.kernel.org/fedora-secondary/development/rawhide/Everything"
+    primary_arch_frozen_base="rsync://mirrors.kernel.org/fedora/development/rawhide/Everything"
 
     # This is a hack; fix it later to auto-detect
     # We need to do this to ensure that we set up the right primary and
     # alternative architectures
     version=27
 else
-    print_milestone=$_arg_milestone
-    if [ $milestone == "GA" ]; then
-        version_path="$version"
-    else
+    if [ "$_arg_alt_stage" != "" ]; then
+        # Pull the repo from the staging area for release candidates
+        alt_arch_frozen_base="rsync://dl.fedoraproject.org/fedora-alt/stage/${version}_${milestone}-${_arg_alt_stage}/Everything"
+        primary_arch_frozen_base=$alt_arch_frozen_base
         version_path="test/${version}_${milestone}"
+    else
+        if [ $milestone == "GA" ]; then
+            version_path="$version"
+        else
+            version_path="test/${version}_${milestone}"
+        fi
+
+        alt_arch_frozen_base="${alt_arch_base}/releases/${version_path}/Everything"
+        primary_arch_frozen_base="${primary_arch_base}/releases/${version_path}/Everything"
+
+        alt_arch_updates_base="${alt_arch_base}/updates/${version_path}/Everything"
+        primary_arch_updates_base="${primary_arch_base}/updates/${version_path}/Everything"
     fi
 fi
 
 # The Source RPMs always come from the primary path
-source_uri="${primary_arch_frozen_base}/${version_path}/Everything/source/tree/repodata/"
+source_uri="${primary_arch_frozen_base}/source/tree/repodata/"
 
 dest_sources="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/sources/repodata"
 mkdir -p $dest_sources
@@ -211,7 +227,7 @@ if [ $_arg_updates == "on" ]; then
     # Pull down the stable updates repodata as well
 
     # The Source RPMs always come from the primary path
-    source_uri="${primary_arch_updates_base}/${version_path}/Everything/source/tree/repodata/"
+    source_uri="${primary_arch_updates_base}/source/tree/repodata/"
 
     dest_update_sources="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/sources/repodata"
     mkdir -p $dest_update_sources
@@ -233,11 +249,11 @@ for arch in ${_arg_arch[@]}; do
     sec_arch=$?
 
     if [ $sec_arch -eq 1 ]; then
-        frozen_binary_uri="${alt_arch_frozen_base}/${version_path}/Everything/$basearch/os/repodata/"
-        updates_binary_uri="${alt_arch_updates_base}/${version_path}/Everything/$basearch/os/repodata/"
+        frozen_binary_uri="${alt_arch_frozen_base}/$basearch/os/repodata/"
+        updates_binary_uri="${alt_arch_updates_base}/$basearch/os/repodata/"
     else
-        frozen_binary_uri="${primary_arch_frozen_base}/${version_path}/Everything/$basearch/os/repodata/"
-        updates_binary_uri="${primary_arch_updates_base}/${version_path}/Everything/$basearch/os/repodata/"
+        frozen_binary_uri="${primary_arch_frozen_base}/$basearch/os/repodata/"
+        updates_binary_uri="${primary_arch_updates_base}/$basearch/os/repodata/"
     fi
 
     dest_frozen_binaries="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/$arch/repodata"
