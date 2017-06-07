@@ -9,7 +9,6 @@
 # ARG_OPTIONAL_SINGLE([repo-path],[],[Base directory for storing the repodata],[./repo])
 # ARG_OPTIONAL_REPEATED([arch],[],[Which CPU architecture(s)?],[])
 # ARG_OPTIONAL_BOOLEAN([updates],[],[Whether to also download the latest updates repodata. Not valid with release=Rawhide or --alt-stage])
-# ARG_OPTIONAL_BOOLEAN([clobber],[],[Whether to remove the existing repodata and download it fresh],[on])
 # ARG_HELP([Download the RPM repodata for the requested Fedora version and milestone])
 # ARGBASH_GO()
 # needed because of Argbash --> m4_ignore([
@@ -43,19 +42,17 @@ _arg_alt_stage=
 _arg_repo_path="./repo"
 _arg_arch=()
 _arg_updates=off
-_arg_clobber=on
 
 print_help ()
 {
 	echo "Download the RPM repodata for the requested Fedora version and milestone"
-	printf 'Usage: %s [--release <arg>] [--milestone <arg>] [--alt-stage <arg>] [--repo-path <arg>] [--arch <arg>] [--(no-)updates] [--(no-)clobber] [-h|--help]\n' "$0"
+	printf 'Usage: %s [--release <arg>] [--milestone <arg>] [--alt-stage <arg>] [--repo-path <arg>] [--arch <arg>] [--(no-)updates] [-h|--help]\n' "$0"
 	printf "\t%s\n" "--release: Which Fedora release? (default: '"26"')"
 	printf "\t%s\n" "--milestone: Which release milestone? Alpha, Beta or GA (default: '"GA"')"
 	printf "\t%s\n" "--alt-stage: Specify the version of a release-candidate (no default)"
 	printf "\t%s\n" "--repo-path: Base directory for storing the repodata (default: '"./repo"')"
 	printf "\t%s\n" "--arch: Which CPU architecture(s)? (empty by default)"
 	printf "\t%s\n" "--updates,--no-updates: Whether to also download the latest updates repodata. Not valid with release=Rawhide or --alt-stage (off by default)"
-	printf "\t%s\n" "--clobber,--no-clobber: Whether to remove the existing repodata and download it fresh (on by default)"
 	printf "\t%s\n" "-h,--help: Prints help"
 }
 
@@ -117,10 +114,6 @@ do
 		--no-updates|--updates)
 			_arg_updates="on"
 			test "${1:0:5}" = "--no-" && _arg_updates="off"
-			;;
-		--no-clobber|--clobber)
-			_arg_clobber="on"
-			test "${1:0:5}" = "--no-" && _arg_clobber="off"
 			;;
 		-h*|--help)
 			print_help
