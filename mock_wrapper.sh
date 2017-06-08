@@ -12,7 +12,8 @@ if [ "$RELEASEVER" == "rawhide" ]; then
     VERNUM=27
 fi
 
-cat > $SCRIPT_DIR/fedora-$RELEASEVER-multiarch.cfg << EOF
+tmp_cfg=`mktemp`
+cat > $tmp_cfg << EOF
 
 config_opts['root'] = 'fedora-$RELEASEVER-srpm'
 config_opts['target_arch'] = 'x86_64'
@@ -59,6 +60,11 @@ gpgcheck=1
 """
 
 EOF
+
+# Compare and replace if it has changed
+if ! diff -q $tmp_cfg $SCRIPT_DIR/fedora-$RELEASEVER-multiarch.cfg ; then
+    mv $tmp_cfg $tmp_cfg $SCRIPT_DIR/fedora-$RELEASEVER-multiarch.cfg
+fi
 
 mock -r $SCRIPT_DIR/fedora-$RELEASEVER-multiarch.cfg init
 mock -r $SCRIPT_DIR/fedora-$RELEASEVER-multiarch.cfg --chroot "mkdir -p /opt/srpm/output"
