@@ -7,6 +7,7 @@
 # ARG_OPTIONAL_SINGLE([milestone],[],[Which release milestone? Alpha, Beta or GA],[GA])
 # ARG_OPTIONAL_SINGLE([alt-stage],[],[Specify the version of a release-candidate],[])
 # ARG_OPTIONAL_SINGLE([repo-path],[],[Base directory for storing the repodata],[./repo])
+# ARG_OPTIONAL_SINGLE([archful-srpm-file],[],[File containing the names of SRPMs known to differ between architectures],[])
 # ARG_OPTIONAL_REPEATED([arch],[],[Which CPU architecture(s)?],[])
 # ARG_OPTIONAL_BOOLEAN([updates],[],[Whether to also download the latest updates repodata. Not valid with release=Rawhide or --alt-stage])
 # ARG_OPTIONAL_BOOLEAN([overrides],[],[Whether to also download the override repodata.],[])
@@ -41,6 +42,7 @@ _arg_release="26"
 _arg_milestone="GA"
 _arg_alt_stage=
 _arg_repo_path="./repo"
+_arg_archful_srpm_file=
 _arg_arch=()
 _arg_updates=off
 _arg_overrides=off
@@ -48,11 +50,12 @@ _arg_overrides=off
 print_help ()
 {
 	echo "Download the RPM repodata for the requested Fedora version and milestone"
-	printf 'Usage: %s [--release <arg>] [--milestone <arg>] [--alt-stage <arg>] [--repo-path <arg>] [--arch <arg>] [--(no-)updates] [--(no-)overrides] [-h|--help]\n' "$0"
+	printf 'Usage: %s [--release <arg>] [--milestone <arg>] [--alt-stage <arg>] [--repo-path <arg>] [--archful-srpm-file <arg>] [--arch <arg>] [--(no-)updates] [--(no-)overrides] [-h|--help]\n' "$0"
 	printf "\t%s\n" "--release: Which Fedora release? (default: '"26"')"
 	printf "\t%s\n" "--milestone: Which release milestone? Alpha, Beta or GA (default: '"GA"')"
 	printf "\t%s\n" "--alt-stage: Specify the version of a release-candidate (no default)"
 	printf "\t%s\n" "--repo-path: Base directory for storing the repodata (default: '"./repo"')"
+	printf "\t%s\n" "--archful-srpm-file: File containing the names of SRPMs known to differ between architectures (no default)"
 	printf "\t%s\n" "--arch: Which CPU architecture(s)? (empty by default)"
 	printf "\t%s\n" "--updates,--no-updates: Whether to also download the latest updates repodata. Not valid with release=Rawhide or --alt-stage (off by default)"
 	printf "\t%s\n" "--overrides,--no-overrides: Whether to also download the override repodata. (off by default)"
@@ -103,6 +106,16 @@ do
 				shift
 			fi
 			_arg_repo_path="$_val"
+			;;
+		--archful-srpm-file|--archful-srpm-file=*)
+			_val="${_key##--archful-srpm-file=}"
+			if test "$_val" = "$_key"
+			then
+				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+				_val="$2"
+				shift
+			fi
+			_arg_archful_srpm_file="$_val"
 			;;
 		--arch|--arch=*)
 			_val="${_key##--arch=}"
@@ -225,9 +238,7 @@ do
 done
 
 source_path=$(dirname $dest_sources)
-echo "[base-source]" >> $repo_config_file
-echo "path = $source_path" >> $repo_config_file
-echo >> $repo_config_file
+dnf_source_repos="--repofrompath=frozen-source,$source_path"
 
 if [ $_arg_updates == "on" ]; then
     # Pull down the stable updates repodata as well
@@ -250,6 +261,28 @@ if [ $_arg_updates == "on" ]; then
     echo "[updates-source]" >> $repo_config_file
     echo "path = $source_updates_path" >> $repo_config_file
     echo >> $repo_config_file
+
+    dnf_source_repos="$dnf_source_repos --repofrompath=frozen-updates-source,$source_updates_path"
+fi
+
+
+if [ "$_arg_archful_srpm_file" != "" ]; then
+    # Get a list of NVRs for archful SRPMs
+    echo "Getting archful SRPMs"
+    tmp_dir=`mktemp -d -p $SCRIPT_DIR`
+    nvr_file="${tmp_dir}/nvr_file"
+
+    echo "Reading ${_arg_archful_srpm_file}"
+    archful_srpm_file=$(readlink -f ${_arg_archful_srpm_file})
+
+    cat $archful_srpm_file |
+    xargs dnf repoquery -q --disablerepo=* --qf "%{NAME}-%{VERSION}-%{RELEASE}" $dnf_source_repos > $nvr_file
+
+    # Generate the archful SRPMs
+    echo "Regenerating archful SRPMs"
+    pushd $tmp_dir
+        $SCRIPT_DIR/mock_wrapper.sh $version $nvr_file
+    popd
 fi
 
 for arch in ${_arg_arch[@]}; do
@@ -267,7 +300,7 @@ for arch in ${_arg_arch[@]}; do
         updates_binary_uri="${primary_arch_updates_base}/$basearch/os/repodata/"
     fi
 
-    dest_frozen_binaries="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/$arch/repodata"
+    dest_frozen_binaries="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/$arch/os/repodata"
     mkdir -p $dest_frozen_binaries
 
     # rsync the binary RPM repodata from mirrors.kernel.org
@@ -313,11 +346,30 @@ for arch in ${_arg_arch[@]}; do
            RC=$?
         done
     fi
+
+    if [ "$_arg_archful_srpm_file" != "" ]; then
+        dest_archful="$(readlink -f ${_arg_repo_path})/${version_path}/archful/$arch"
+        dest_archful_sources=${dest_archful}/sources
+        mkdir -p $dest_archful_sources
+        mv $tmp_dir/output/$arch/*.src.rpm $dest_archful_sources
+        createrepo_c -q $dest_archful_sources
+
+        # Merge the archful SRPMs into the frozen sources
+        archful_source_path="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/$arch/sources"
+        rm -Rf $archful_source_path
+        mergerepo_c --method=repo -r $dest_archful_sources -r $source_path -o $archful_source_path
+    fi
+
 done
 
-    frozen_binary_path="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/{arch}"
+    frozen_binary_path="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/{arch}/os"
     echo "[base]" >> $repo_config_file
     echo "path = $frozen_binary_path" >> $repo_config_file
+    echo >> $repo_config_file
+
+    archful_config_source_path="$(readlink -f ${_arg_repo_path})/${version_path}/frozen/{arch}/sources"
+    echo "[base-source]" >> $repo_config_file
+    echo "path = $archful_config_source_path" >> $repo_config_file
     echo >> $repo_config_file
 
     if [ $_arg_overrides == "on" ]; then
