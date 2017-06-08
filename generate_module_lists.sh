@@ -149,6 +149,7 @@ fi
 
 for arch in ${_arg_arch[@]}; do
     modulearchroot=$moduleroot/$arch
+    mkdir -p $modulearchroot
     pkgfile="$modulearchroot/toplevel-binary-packages.txt"
     hintsfile="$modulearchroot/hints.txt"
 
@@ -172,24 +173,42 @@ for arch in ${_arg_arch[@]}; do
     # Depchase the binary and source packages for the runtime
     echo "Processing runtime for $arch"
     cat $pkgfile |
-    xargs depchase -a $arch -c $repocfg resolve $hints |
+    xargs depchase -a $arch -c $repocfg resolve $hints > $modulearchroot/depchase-runtime-failures.txt
+    RC=$?
+    if [ $RC -ne 0 ]; then
+        echo "Depchase failures encountered on $arch runtime:"
+        cat $modulearchroot/depchase-runtime-failures.txt
+        continue
+    fi
+
+    cat $modulearchroot/depchase-runtime-failures.txt |
     while IFS= read -r nevra; do
           [[ "$nevra" == *.src || "$nevra" == *.nosrc ]] && type_="source" || type_="binary"
           name=${nevra%-*-*}
           echo "$nevra" >> $modulearchroot/runtime-$type_-packages-full.txt
           echo "$name" >> $modulearchroot/runtime-$type_-packages-short.txt
     done
+    rm -f $modulearchroot/depchase-runtime-failures.txt
 
     # Depchase the binary and source packages for the self-hosting set
     echo "Processing self-hosting for $arch"
     cat $pkgfile |
-    xargs depchase -a $arch -c $repocfg resolve --selfhost $hints |
+    xargs depchase -a $arch -c $repocfg resolve --selfhost $hints > $modulearchroot/depchase-selfhosting-failures.txt
+    RC=$?
+    if [ $RC -ne 0 ]; then
+        echo "Depchase failures encountered on $arch self-hosting:"
+        cat $modulearchroot/depchase-selfhosting-failures.txt
+        continue
+    fi
+
+    cat $modulearchroot/depchase-selfhosting-failures.txt |
     while IFS= read -r nevra; do
           [[ "$nevra" == *.src || "$nevra" == *.nosrc ]] && type_="source" || type_="binary"
           name=${nevra%-*-*}
           echo "$nevra" >> $modulearchroot/selfhosting-$type_-packages-full.txt
           echo "$name" >> $modulearchroot/selfhosting-$type_-packages-short.txt
     done
+    rm -f $modulearchroot/depchase-selfhosting-failures.txt
 
     LC_SAVED=$LC_ALL
     export LC_ALL=C
