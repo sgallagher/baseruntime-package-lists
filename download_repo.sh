@@ -316,33 +316,19 @@ for arch in ${_arg_arch[@]}; do
     if [ $_arg_overrides == "on" ]; then
         # Pull down the current override repository repodata from
         # fedorapeople
-        # This does not pull down the full contents, so if recreation
-        # or modification of the repository is necessary, it must be
-        # retrieved separately
-        override_base="rsync://fedorapeople.org/project/modularity/repos/fedora/gencore-override/${version_path}/$arch"
-        override_source_uri="${override_base}/sources/repodata/"
-        override_binary_uri="${override_base}/os/repodata/"
+        # This will pull down the full contents, so we can update
+        # the repository as necessary
+        override_uri="rsync://fedorapeople.org/project/modularity/repos/fedora/gencore-override/${version_path}/$arch"
 
         dest_override="$(readlink -f ${_arg_repo_path})/${version_path}/override/$arch"
-        dest_override_sources=${dest_override}/sources/repodata
-        dest_override_binaries=${dest_override}/os/repodata
-        mkdir -p $dest_override_sources $dest_override_binaries
+        mkdir -p $dest_override
 
-        echo "Downloading override source RPM repodata from ${override_source_uri} for $arch"
+        echo "Downloading override repository from ${override_uri} for $arch"
         RC=5
         while [[ $RC -eq 5 ]]
         do
            rsync -azh --no-motd --delete-before \
-            ${override_source_uri} ${dest_override_sources}
-           RC=$?
-        done
-
-        echo "Downloading override binary RPM repodata from ${override_binary_uri} for $arch"
-        RC=5
-        while [[ $RC -eq 5 ]]
-        do
-           rsync -azh --no-motd --delete-before \
-            ${override_binary_uri} ${dest_override_binaries}
+            ${override_uri} ${dest_override}
            RC=$?
         done
     fi
