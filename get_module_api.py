@@ -36,12 +36,17 @@ def get_modulemd(module_name, stream):
 @click.command()
 @click.option('--module', default='base-runtime',
               help='The module to get the API from')
+@click.option('--modulemd', default=None,
+              help='Path to module metadata YAML on the local filesystem')
 @click.option('--ref', default='f26',
               help='The ref of the module to retrieve')
-def main(module, ref):
-    modulemd = yaml.load(get_modulemd(module, ref), Loader=Loader)
+def main(module, modulemd, ref):
+    if modulemd:
+        md = yaml.load(open(modulemd, 'r'))
+    else:
+        md = yaml.load(get_modulemd(module, ref), Loader=Loader)
 
-    for rpm in sorted(modulemd['data']['api']['rpms']):
+    for rpm in sorted(md['data']['api']['rpms']):
         print(rpm)
 
 
