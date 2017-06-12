@@ -53,6 +53,13 @@ def get_api(ctx):
     for rpm in sorted(ctx.obj["modulemd"]['data']['api']['rpms']):
         print(rpm)
 
+@cli.command()
+@click.pass_context
+def get_deps(ctx):
+    deps = ctx.obj['modulemd']['data']['dependencies']['requires']
+    for dep in sorted(deps):
+        print("{}:{}".format(dep,deps[dep]))
+
 def main():
     cli(obj={})
 
