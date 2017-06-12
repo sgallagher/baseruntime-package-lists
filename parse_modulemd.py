@@ -33,21 +33,28 @@ def get_modulemd(module_name, stream):
                        module_name, stream))
     return mod_info["results"][-1]["modulemd"]
 
-@click.command()
+@click.group()
 @click.option('--module', default='base-runtime',
               help='The module to get the API from')
 @click.option('--modulemd', default=None,
               help='Path to module metadata YAML on the local filesystem')
 @click.option('--ref', default='f26',
               help='The ref of the module to retrieve')
-def main(module, modulemd, ref):
+@click.pass_context
+def cli(ctx, module, modulemd, ref):
     if modulemd:
-        md = yaml.load(open(modulemd, 'r'))
+        ctx.obj["modulemd"] = yaml.load(open(modulemd, 'r'))
     else:
-        md = yaml.load(get_modulemd(module, ref), Loader=Loader)
+        ctx.obj["modulemd"] = yaml.load(get_modulemd(module, ref), Loader=Loader)
 
-    for rpm in sorted(md['data']['api']['rpms']):
+@cli.command()
+@click.pass_context
+def get_api(ctx):
+    for rpm in sorted(ctx.obj["modulemd"]['data']['api']['rpms']):
         print(rpm)
+
+def main():
+    cli(obj={})
 
 
 if __name__ == "__main__":
