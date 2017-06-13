@@ -92,6 +92,11 @@ def get_api(ctx):
         print(rpm)
 
 @cli.command()
+@click.pass_context
+def get_name(ctx):
+    print(ctx.obj["modulemd"]['data']['name'])
+
+@cli.command()
 @click.option('--recursive/--no-recursive', default=True,
               help='Whether to get all of the dependencies of dependencies')
 @click.pass_context
