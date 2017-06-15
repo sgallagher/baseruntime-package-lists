@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import click
+from os.path import basename
 from pdc_client import PDCClient
 import yaml
 try:
@@ -79,7 +80,12 @@ def _get_recursive_module_deps(deps, name, ref):
 def cli(ctx, module, modulemd, ref):
     if modulemd:
         ctx.obj["modulemd"] = yaml.load(open(modulemd, 'r'))
-        ctx.obj["name"] = ctx.obj["modulemd"]['data']['name']
+        try:
+            ctx.obj["name"] = ctx.obj["modulemd"]['data']['name']
+        except KeyError:
+            # If the modulemd doesn't list the name, assume that the
+            # filename does
+            ctx.obj["name"] = basename(modulemd).rsplit('.', 1)[0]
     else:
         ctx.obj["modulemd"] = get_modulemd(module, ref)
         ctx.obj["name"] = module
@@ -94,7 +100,7 @@ def get_api(ctx):
 @cli.command()
 @click.pass_context
 def get_name(ctx):
-    print(ctx.obj["modulemd"]['data']['name'])
+    print(ctx.obj['name'])
 
 @cli.command()
 @click.option('--recursive/--no-recursive', default=True,
