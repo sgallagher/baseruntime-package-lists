@@ -18,7 +18,7 @@ fi
 
 # Make sure every directory is present, even if it is empty
 for arch in "x86_64" "i686" "armv7hl" "aarch64" "ppc64" "ppc64le"; do
-    mkdir -p $dest/$arch/sources $dest/$arch/os
+    mkdir -p $dest/override/$arch/sources $dest/override/$arch/os
 done
 
 if [ "$release" == "rawhide" ]; then
@@ -29,8 +29,8 @@ fi
 
 # Generate or update all of the repodata
 for arch in "x86_64" "i686" "armv7hl" "aarch64" "ppc64" "ppc64le"; do
-    createrepo_c $dest/$arch/sources
-    createrepo_c $dest/$arch/os
+    createrepo_c $dest/override/$arch/sources
+    createrepo_c $dest/override/$arch/os
 done
 
 # Set the group ownership to the modularity-wg group
