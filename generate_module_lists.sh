@@ -172,6 +172,10 @@ for arch in ${_arg_arch[@]}; do
         continue
     fi
 
+    > $modulearchroot/runtime-binary-packages-full.txt
+    > $modulearchroot/runtime-source-packages-full.txt
+    > $modulearchroot/runtime-binary-packages-short.txt
+    > $modulearchroot/runtime-source-packages-short.txt
     cat $modulearchroot/depchase-runtime-failures.txt |
     while IFS= read -r nevra; do
           [[ "$nevra" == *.src || "$nevra" == *.nosrc ]] && type_="source" || type_="binary"
@@ -192,6 +196,10 @@ for arch in ${_arg_arch[@]}; do
         continue
     fi
 
+    > $modulearchroot/selfhosting-binary-packages-full.txt
+    > $modulearchroot/selfhosting-source-packages-full.txt
+    > $modulearchroot/selfhosting-binary-packages-short.txt
+    > $modulearchroot/selfhosting-source-packages-short.txt
     cat $modulearchroot/depchase-selfhosting-failures.txt |
     while IFS= read -r nevra; do
           [[ "$nevra" == *.src || "$nevra" == *.nosrc ]] && type_="source" || type_="binary"
