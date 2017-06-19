@@ -175,9 +175,9 @@ for arch in ${_arg_arch[@]}; do
     cat $modulearchroot/depchase-runtime-failures.txt |
     while IFS= read -r nevra; do
           [[ "$nevra" == *.src || "$nevra" == *.nosrc ]] && type_="source" || type_="binary"
-          name=${nevra%-*-*}
-          echo "$nevra" >> $modulearchroot/runtime-$type_-packages-full.txt
-          echo "$name" >> $modulearchroot/runtime-$type_-packages-short.txt
+        name=${nevra%-*-*}
+        echo "$nevra" >> $modulearchroot/runtime-$type_-packages-full.txt
+        echo "$name" >> $modulearchroot/runtime-$type_-packages-short.txt
     done
     rm -f $modulearchroot/depchase-runtime-failures.txt
 
@@ -195,16 +195,16 @@ for arch in ${_arg_arch[@]}; do
     cat $modulearchroot/depchase-selfhosting-failures.txt |
     while IFS= read -r nevra; do
           [[ "$nevra" == *.src || "$nevra" == *.nosrc ]] && type_="source" || type_="binary"
-          name=${nevra%-*-*}
-          echo "$nevra" >> $modulearchroot/selfhosting-$type_-packages-full.txt
-          echo "$name" >> $modulearchroot/selfhosting-$type_-packages-short.txt
+        name=${nevra%-*-*}
+        echo "$nevra" >> $modulearchroot/selfhosting-$type_-packages-full.txt
+        echo "$name" >> $modulearchroot/selfhosting-$type_-packages-short.txt
     done
     rm -f $modulearchroot/depchase-selfhosting-failures.txt
 
     LC_SAVED=$LC_ALL
     export LC_ALL=C
     for f in $modulearchroot/{runtime,selfhosting}-{binary,source}-packages-{full,short}.txt; do
-      sort -u $f -o $f
+        sort -u $f -o $f
     export LC_ALL=$LC_SAVED
     done
 
