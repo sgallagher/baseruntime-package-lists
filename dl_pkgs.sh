@@ -17,12 +17,12 @@ fi
 
 
 for arch in "x86_64" "i686" "armv7hl" "aarch64" "ppc64" "ppc64le"; do
-    mkdir -p repo/$release/$arch/os repo/$release/$arch/sources
-    pushd repo/$release/$arch/os/
+    mkdir -p repo/$release/override/$arch/os repo/$release/override/$arch/sources
+    pushd repo/$release/override/$arch/os/
     cat $nvrfile | xargs --max-procs=$PROCESSORS -I NVR \
         koji download-build --arch=noarch --arch=$arch NVR
     popd
-    pushd repo/$release/$arch/sources/
+    pushd repo/$release/override/$arch/sources/
     cat $nvrfile | xargs --max-procs=$PROCESSORS -I NVR \
         koji download-build --arch=src NVR
     popd
