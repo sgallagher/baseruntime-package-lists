@@ -6,7 +6,7 @@ c-ares
 coreutils
 efibootmgr
 fbset
-fedora-release
+fedora-modular-release
 fedpkg-minimal
 flex
 fuse-libs

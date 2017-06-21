@@ -5,7 +5,7 @@ bzip2
 c-ares
 coreutils
 fbset
-fedora-release
+fedora-modular-release
 fedpkg-minimal
 flex
 fuse-libs

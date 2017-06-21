@@ -1,8 +1,7 @@
 coreutils
 cronie-noanacron
 environment-modules
-fedora-logos-httpd
-fedora-release
+fedora-modular-release
 glibc-minimal-langpack
 gnuplot
 infinipath-psm
