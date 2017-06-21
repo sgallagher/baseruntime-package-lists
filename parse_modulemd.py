@@ -80,7 +80,8 @@ def _get_recursive_module_deps(deps, name, ref):
 @click.pass_context
 def cli(ctx, module, modulemd, ref):
     if modulemd:
-        ctx.obj["modulemd"] = yaml.load(open(modulemd, 'r'))
+        with open(modulemd, 'r') as modulemd_file:
+            ctx.obj["modulemd"] = yaml.load(open(modulemd, 'r'))
         try:
             ctx.obj["name"] = ctx.obj["modulemd"]['data']['name']
         except KeyError:
@@ -166,7 +167,9 @@ def update_module_hashes(ctx, hash_file, output_file):
         ctx.obj['modulemd']['data']['components']['rpms'][pkgname]['ref'] = \
             githash
 
-    output_file.write(yaml.dump(ctx.obj['modulemd'], default_flow_style=False))
+    output_file.write(yaml.dump(ctx.obj['modulemd'],
+                                Dumper=Dumper,
+                                default_flow_style=False))
 
 def main():
     cli(obj={})
