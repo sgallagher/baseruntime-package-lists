@@ -171,6 +171,26 @@ def update_module_hashes(ctx, hash_file, output_file):
                                 Dumper=Dumper,
                                 default_flow_style=False))
 
+
+@cli.command()
+@click.argument('hash-file', nargs=1, type=click.File('r'))
+@click.argument('output-file', nargs=1, type=click.File('w', atomic=True))
+def reflow_modulemd(hash_file, output_file):
+    """
+    Read in a modulemd and write it back out with standard PyYAML ordering and
+    layout.
+    """
+    modulemd = yaml.load(hash_file, Loader=Loader)
+
+    output_file.write(
+        yaml.dump(
+            modulemd,
+            Dumper=Dumper,
+            default_flow_style=False
+        )
+    )
+
+
 def main():
     cli(obj={})
 
