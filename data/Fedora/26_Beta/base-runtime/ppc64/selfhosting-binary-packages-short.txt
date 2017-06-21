@@ -768,8 +768,8 @@ fedfs-utils-lib
 fedfs-utils-nsdbparams
 fedora-logos
 fedora-logos-httpd
-fedora-release
-fedora-repos
+fedora-modular-release
+fedora-modular-repos
 fedora-rpm-macros
 fedpkg-minimal
 felix-bundlerepository

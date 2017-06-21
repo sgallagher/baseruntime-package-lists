@@ -28,8 +28,8 @@ emacs
 expat
 fbset
 fedora-logos
-fedora-release
-fedora-repos
+fedora-modular-release
+fedora-modular-repos
 fedora-rpm-macros
 fedpkg-minimal
 file
