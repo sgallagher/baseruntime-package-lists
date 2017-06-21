@@ -26,7 +26,7 @@ e2fsprogs-1.43.4-2.fc26.src
 elfutils-0.169-1.fc26.src
 emacs-1:25.2-2.fc26.src
 expat-2.2.0-2.fc26.src
-fbset-2.1-39.fc26.src
+fbset-2.1-41.fc27.src
 fedora-logos-26.0.1-1.fc26.src
 fedora-modular-release-26-4.module_bc43b454.src
 fedora-modular-repos-26-0.1.module_bc43b454.src

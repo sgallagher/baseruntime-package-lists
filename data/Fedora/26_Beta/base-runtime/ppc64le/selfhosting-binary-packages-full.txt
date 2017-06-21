@@ -717,7 +717,7 @@ fakeroot-1.21-3.fc26.ppc64le
 fakeroot-libs-1.21-3.fc26.ppc64le
 fasterxml-oss-parent-26-3.fc26.noarch
 fastutil-7.0.7-3.fc26.noarch
-fbset-2.1-39.fc26.ppc64le
+fbset-2.1-41.fc27.ppc64le
 fcgi-2.4.0-30.fc26.ppc64le
 fcgi-devel-2.4.0-30.fc26.ppc64le
 fedfs-utils-common-0.10.5-4.fc25.noarch

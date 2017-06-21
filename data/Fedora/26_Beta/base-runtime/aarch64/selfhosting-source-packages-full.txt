@@ -355,7 +355,7 @@ fakechroot-2.19-1.fc26.src
 fakeroot-1.21-3.fc26.src
 fasterxml-oss-parent-26-3.fc26.src
 fastutil-7.0.7-3.fc26.src
-fbset-2.1-39.fc26.src
+fbset-2.1-41.fc27.src
 fcgi-2.4.0-30.fc26.src
 fedfs-utils-0.10.5-4.fc25.src
 fedora-logos-26.0.1-1.fc26.src
