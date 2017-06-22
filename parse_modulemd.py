@@ -136,6 +136,14 @@ def get_build_deps(ctx):
 
 @cli.command()
 @click.pass_context
+def get_component_rpms(ctx):
+    modulemd = ctx.obj["modulemd"]
+
+    for pkg in modulemd['data']['components']['rpms'].keys():
+        print(pkg)
+
+@cli.command()
+@click.pass_context
 @click.argument('hash-file', nargs=1, type=click.File('r'))
 @click.argument('output-file', nargs=1, type=click.File('w', atomic=True))
 def update_module_hashes(ctx, hash_file, output_file):
