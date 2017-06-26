@@ -187,7 +187,6 @@ def update_module_hashes(ctx, hash_file, output_file):
 
 
 @cli.command()
-@click.argument('hash-file', nargs=1, type=click.File('r'))
 @click.argument('output-file', nargs=1, type=click.File('w', atomic=True))
 def reflow_modulemd(hash_file, output_file):
     """
