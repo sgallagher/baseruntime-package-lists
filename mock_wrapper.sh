@@ -62,6 +62,7 @@ gpgcheck=1
 EOF
 
 # Compare and replace if it has changed
+touch $SCRIPT_DIR/fedora-$RELEASEVER-multiarch.cfg
 if ! diff -q $tmp_cfg $SCRIPT_DIR/fedora-$RELEASEVER-multiarch.cfg ; then
     mv $tmp_cfg $tmp_cfg $SCRIPT_DIR/fedora-$RELEASEVER-multiarch.cfg
 fi
