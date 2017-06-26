@@ -4,7 +4,7 @@
 # ARG_OPTIONAL_SINGLE([module],[],[Which module are we generating data on?],[base-runtime])
 # ARG_OPTIONAL_SINGLE([version],[],[The Fedora release number],[25])
 # ARG_OPTIONAL_SINGLE([milestone],[],[The Fedora release milestone],[GA])
-# ARG_OPTIONAL_REPEATED([arch],[],[Which CPU architecture(s)?],['aarch64' 'armv7hl' 'i686' 'ppc64' 'ppc64le' 'x86_64'])
+# ARG_OPTIONAL_REPEATED([arch],[],[Which CPU architecture(s)?],[])
 # ARG_OPTIONAL_SINGLE([repo-path],[],[The base path for repositories],[./repo])
 # ARG_OPTIONAL_SINGLE([data-path],[],[The base path for processed data],[./data])
 # ARG_HELP([Script to produce the dependency data files for modules])
@@ -37,7 +37,7 @@ begins_with_short_option()
 _arg_module="base-runtime"
 _arg_version="25"
 _arg_milestone="GA"
-_arg_arch=('aarch64' 'armv7hl' 'i686' 'ppc64' 'ppc64le' 'x86_64')
+_arg_arch=()
 _arg_repo_path="./repo"
 _arg_data_path="./data"
 
@@ -48,7 +48,7 @@ print_help ()
 	printf "\t%s\n" "--module: Which module are we generating data on? (default: '"base-runtime"')"
 	printf "\t%s\n" "--version: The Fedora release number (default: '"25"')"
 	printf "\t%s\n" "--milestone: The Fedora release milestone (default: '"GA"')"
-	printf "\t%s\n" "--arch: Which CPU architecture(s)? (default array: ('aarch64' 'armv7hl' 'i686' 'ppc64' 'ppc64le' 'x86_64') )"
+	printf "\t%s\n" "--arch: Which CPU architecture(s)? (empty by default)"
 	printf "\t%s\n" "--repo-path: The base path for repositories (default: '"./repo"')"
 	printf "\t%s\n" "--data-path: The base path for processed data (default: '"./data"')"
 	printf "\t%s\n" "-h,--help: Prints help"
