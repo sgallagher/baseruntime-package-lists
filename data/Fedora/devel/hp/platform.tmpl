@@ -56,12 +56,14 @@ data:
                 - rpm-build
                 - shadow-utils
     filter:
-        - cmake
-        - cmake-data
-        - cmake-doc
-        - cmake-gui
-        - fedora-repos
-        - powerpc-utils
+        rpms:
+            - cmake
+            - cmake-data
+            - cmake-doc
+            - cmake-gui
+            - fedora-repos
+            - fedora-repos-rawhide
+            - powerpc-utils
     components:
         rpms:
 [% INCLUDE components.tmpl -%]
